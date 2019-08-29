@@ -1,6 +1,11 @@
-source("GeometricMedian.R")
+curr_dir <- getwd()
+frame_files <- lapply(sys.frames(), function(x) x$ofile)
+frame_files <- Filter(Negate(is.null), frame_files)
+setwd(dirname(frame_files[[length(frame_files)]]))
+source("GeometricMedian.r")
+setwd(curr_dir)
 
-r1pca <- function(x, k, centered=2) {
+r1pca <- function(x, maxd, centered=1, isCentered=FALSE) {
   epsilon <- 1e-10
   delta <- 1e-10
   Loop <- 100
@@ -13,37 +18,34 @@ r1pca <- function(x, k, centered=2) {
     }
   }
 
-  data <- as.matrix(x)
-  N <- nrow(data)
-  d <- ncol(data)
-  if (k>d)
-    k <- d
-
+  inpX <- as.matrix(x)
+  N <- nrow(inpX)
+  d <- ncol(inpX)
+  
   # centered==1の時は`\min_{c\in\mathbb{R}^d} \sum_{i=1}^{N} \left\| x_i - c \right\|_{2}` を最小にする`\hat{c}\in\mathbb{R}^d` を中心ベクトル(平均ベクトル)として中心化を行う
   # centered==2の時は通常の平均ベクトルによって中心化を行う
   mu <- rep(0, d)
-  if(centered == 1) {
-    mu <- GM(data)
-    data <- data - matrix(t(mu), N, d, T)
+  if(!isCentered && centered == 1) {
+    mu <- GM(inpX)
   }
-  else if(centered == 2) {
+  else if(!isCentered && centered == 2) {
     mu <- as.vector(apply(data, 2, function(v) mean(v)))
-    data <- data - matrix(t(mu), N, d, T)
   }
+  X <- inpX - matrix(mu, N, d, T)
 
-  U <- (eigen(t(data) %*% data)$vectors)[,1:k]
+  U <- (eigen(t(X) %*% X)$vectors)[,1:maxd]
   s <- sapply(
     1:N,
-    function(i) sqrt( max(0, ( data[i,] %*% ((diag(d) - U%*% t(U))%*%data[i,]) )[1]) )
+    function(i) sqrt( max(0, ( X[i,] %*% ((diag(d) - U%*% t(U))%*%X[i,]) )[1]) )
   )
   c <- median(s)
 
   for(l in 1:Loop) {
     q <- sapply(
       1:N,
-      function(i) wH(data[i,], U, c)
+      function(i) wH(X[i,], U, c)
     )
-    W <- t(data) %*% (data * q)
+    W <- t(X) %*% (X * q)
     WUqr <- qr(W %*% U)
     Us <- qr.Q(WUqr)
     if(norm(Us - U) < epsilon) {
@@ -55,12 +57,6 @@ r1pca <- function(x, k, centered=2) {
     }
   }
 
-  scores <- data %*% U
-  return(
-    list(
-      center=mu,
-      loadings=U,
-      scores=scores
-    )
-  )
+  scores <- X %*% U
+  return(list(center=mu, loadings=U, scores=scores))
 }
