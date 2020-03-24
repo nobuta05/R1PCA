@@ -2,7 +2,7 @@ curr_dir <- getwd()
 frame_files <- lapply(sys.frames(), function(x) x$ofile)
 frame_files <- Filter(Negate(is.null), frame_files)
 setwd(dirname(frame_files[[length(frame_files)]]))
-source("GeometricMedian.r")
+source("GeometricMedian.R")
 setwd(curr_dir)
 
 r1pca <- function(x, maxd, centered=1, isCentered=FALSE) {
