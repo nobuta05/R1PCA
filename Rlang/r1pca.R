@@ -5,7 +5,7 @@ setwd(dirname(frame_files[[length(frame_files)]]))
 source("GeometricMedian.R")
 setwd(curr_dir)
 
-r1pca <- function(x, maxd, centered=1, isCentered=FALSE) {
+r1pca <- function(x, maxd, isCentered=FALSE) {
   epsilon <- 1e-10
   delta <- 1e-10
   Loop <- 100
@@ -25,11 +25,8 @@ r1pca <- function(x, maxd, centered=1, isCentered=FALSE) {
   # centered==1の時は`\min_{c\in\mathbb{R}^d} \sum_{i=1}^{N} \left\| x_i - c \right\|_{2}` を最小にする`\hat{c}\in\mathbb{R}^d` を中心ベクトル(平均ベクトル)として中心化を行う
   # centered==2の時は通常の平均ベクトルによって中心化を行う
   mu <- rep(0, d)
-  if(!isCentered && centered == 1) {
+  if(!isCentered) {
     mu <- GM(inpX)
-  }
-  else if(!isCentered && centered == 2) {
-    mu <- as.vector(apply(data, 2, function(v) mean(v)))
   }
   X <- inpX - matrix(mu, N, d, T)
 
@@ -58,5 +55,9 @@ r1pca <- function(x, maxd, centered=1, isCentered=FALSE) {
   }
 
   scores <- X %*% U
-  return(list(center=mu, loadings=U, scores=scores))
+  return(list(
+    center=mu,
+    loadings=U,
+    scores=scores
+  ))
 }
